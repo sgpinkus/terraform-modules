@@ -1,0 +1,1 @@
+Creates a by default Amazon Linux 2 instance configured with SSH on `ssh_port` and the rest firewalled. Installs auditd and create two log groups: One for generic logs and one for logs to do with security. yum-cron is also installed and configured for automatic security updates.
