@@ -1,7 +1,9 @@
 variable "region" {
   type = string
-  default = "us-west-2"
   description = "The AWS Region to provision resources in"
+}
+
+variable "name" {
 }
 
 variable "common_tags" {
@@ -12,10 +14,6 @@ variable "image_id" {
   type = string
   default = ""
   description = "If not set an Amazon Linux 2 image will be used. Module assumes image is Amazon Linux derived."
-}
-
-variable "eip_id" {
-  type = string
 }
 
 variable "subnet_ids" {
@@ -34,12 +32,6 @@ variable "ec2user_password" {
   type = string
 }
 
-variable "ssh_port" {
-  type = number
-  default = 22
-}
-
-variable "security_group_ids" {
-  default = []
-  description = "Additional security groups."
+variable "ssh_security_group_id" {
+  type = string
 }

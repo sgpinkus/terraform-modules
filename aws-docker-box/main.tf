@@ -1,21 +1,44 @@
-resource "aws_security_group" "main" {
-  name_prefix = "bastion-"
-  ingress {
-    description = ""
-    protocol = "tcp"
-    from_port = var.ssh_port
-    to_port = var.ssh_port
-    cidr_blocks = ["0.0.0.0/0"]
+
+data "aws_vpc" "this" {
+  id = var.vpc_id
+}
+
+local {
+  ingress_rules = [
+    {
+      description = ""
+      protocol = "tcp"
+      from_port = 0
+      to_port = 65535
+      cidr_blocks = [data.aws_vpc.this.cidr_block]
+      # security_groups = [var.client_security_group_id]
+    },
+    {
+      description = ""
+      protocol = "tcp"
+      from_port = 22
+      to_port = 22
+      security_groups = [var.ssh_security_group_id]
+    }
+  ]
+}
+
+resource "aws_security_group" "instance" {
+  name_prefix = "${var.name}-"
+  dynamic "ingress_rule" {
+    for_each = local.ingress_rules
+    content {
+      description = try(ingress_rule.value.description, "")
+      protocol = try(ingress_rule.value.protocol, "-1")
+      from_port = ingress_rule.value.from_port
+      to_port = ingress_rule.value.to_port
+      cidr_blocks = try(ingress_rule.value.cidr_blocks, null)
+      ipv6_cidr_blocks = try(ingress_rule.value.cidr_blocks, null)
+      security_groups = try(ingress_rule.value.security_groups, null)
+    }
   }
-  ingress {
-    description = ""
-    protocol = "tcp"
-    from_port = var.ssh_port
-    to_port = var.ssh_port
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # Need to explicitly define egress - different to CF which has default open egress.
   egress {
-    description = ""
     from_port        = 0
     to_port          = 0
     protocol         = "-1"
@@ -26,19 +49,19 @@ resource "aws_security_group" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "main" {
-  name = "bastion"
+  name = var.name
   retention_in_days = 7
   tags = var.common_tags
 }
 
 resource "aws_cloudwatch_log_group" "security" {
-  name = "bastion-security"
+  name = "${var.name}-security"
   retention_in_days = 30
   tags = var.common_tags
 }
 
 resource aws_iam_role "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${var.name}-"
   force_detach_policies = true
   assume_role_policy = jsonencode({
     "Version" = "2012-10-17"
@@ -49,17 +72,6 @@ resource aws_iam_role "main" {
     }]
   })
   managed_policy_arns = []
-  inline_policy {
-    name = "ec2"
-    policy = jsonencode({
-      "Version" = "2012-10-17"
-      "Statement" = [{
-        "Effect" = "Allow"
-        "Action" = ["ec2:AssociateAddress"]
-        "Resource" = "*"
-      }]
-    })
-  }
   inline_policy {
     name = "logs"
     policy = jsonencode({
@@ -84,17 +96,17 @@ resource aws_iam_role "main" {
 }
 
 resource "aws_iam_instance_profile" "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${var.name}-"
   role = aws_iam_role.main.name
 }
 
 resource "aws_launch_configuration" "main" { # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/launch_configuration
-  name_prefix = "bastion-" # Don't specify name.
+  name_prefix = "${var.name}-" # Don't specify name.
   ebs_optimized = false
   associate_public_ip_address = false
   iam_instance_profile = aws_iam_instance_profile.main.arn
   image_id = var.image_id == "" ? local.general_purpose_ami_map[var.region] : var.image_id
-  instance_type = "t2.nano"
+  instance_type = "t3a.medium"
   key_name = var.key_name
   metadata_options {
     http_tokens = "required"
@@ -104,7 +116,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
     volume_type = "gp3"
     encrypted = "true"
   }
-  security_groups = concat([aws_security_group.main.id], var.security_group_ids])
+  security_groups = [aws_security_group.main.id]
   lifecycle {
     create_before_destroy = true
   }
@@ -112,7 +124,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
 }
 
 resource "aws_autoscaling_group" "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${var.name}-"
   min_size = 1
   max_size = 1
   instance_refresh {
@@ -120,9 +132,9 @@ resource "aws_autoscaling_group" "main" {
   }
   launch_configuration = aws_launch_configuration.main.name
   vpc_zone_identifier = var.subnet_ids
-  tag {
+  tags = merge(var.common_tags, {
     key = "Name"
-    value = "bastion"
+    value = var.name
     propagate_at_launch = true
-  }
+  })
 }

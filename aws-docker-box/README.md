@@ -1,0 +1,1 @@
+Creates a by default Amazon Linux 2 instance in a single node ASG so it will automatically restarted and this can be monitored. Create two log groups: One for generic logs and one for logs to do with security to allow the security logs to be filtered more easily. 
