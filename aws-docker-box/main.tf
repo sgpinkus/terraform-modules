@@ -1,49 +1,38 @@
+terraform {
+  required_version = ">= 0.15"
+  experiments = [module_variable_optional_attrs]
+}
 
 data "aws_vpc" "this" {
   id = var.vpc_id
 }
 
-local {
-  ingress_rules = [
-    {
-      description = ""
-      protocol = "tcp"
-      from_port = 0
-      to_port = 65535
-      cidr_blocks = [data.aws_vpc.this.cidr_block]
-      # security_groups = [var.client_security_group_id]
-    },
-    {
-      description = ""
-      protocol = "tcp"
-      from_port = 22
-      to_port = 22
-      security_groups = [var.ssh_security_group_id]
-    }
-  ]
-}
-
-resource "aws_security_group" "instance" {
+resource "aws_security_group" "this" {
   name_prefix = "${var.name}-"
-  dynamic "ingress_rule" {
-    for_each = local.ingress_rules
+  dynamic "ingress" {
+    for_each = var.ingress_rules
     content {
-      description = try(ingress_rule.value.description, "")
-      protocol = try(ingress_rule.value.protocol, "-1")
-      from_port = ingress_rule.value.from_port
-      to_port = ingress_rule.value.to_port
-      cidr_blocks = try(ingress_rule.value.cidr_blocks, null)
-      ipv6_cidr_blocks = try(ingress_rule.value.cidr_blocks, null)
-      security_groups = try(ingress_rule.value.security_groups, null)
+      protocol = ingress.value.protocol
+      from_port = ingress.value.from_port
+      to_port = ingress.value.to_port
+      description = ingress.value.description
+      cidr_blocks = ingress.value.cidr_blocks
+      ipv6_cidr_blocks = ingress.value.ipv6_cidr_blocks
+      security_groups = ingress.value.security_groups
     }
   }
   # Need to explicitly define egress - different to CF which has default open egress.
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  dynamic "egress" {
+    for_each = var.egress_rules
+    content {
+      protocol = egress.value.protocol
+      from_port = egress.value.from_port
+      to_port = egress.value.to_port
+      description = egress.value.description
+      cidr_blocks = egress.value.cidr_blocks
+      ipv6_cidr_blocks = egress.value.ipv6_cidr_blocks
+      security_groups = egress.value.security_groups
+    }
   }
   vpc_id = var.vpc_id
 }
@@ -116,7 +105,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
     volume_type = "gp3"
     encrypted = "true"
   }
-  security_groups = [aws_security_group.main.id]
+  security_groups = [aws_security_group.this.id]
   lifecycle {
     create_before_destroy = true
   }
@@ -132,9 +121,9 @@ resource "aws_autoscaling_group" "main" {
   }
   launch_configuration = aws_launch_configuration.main.name
   vpc_zone_identifier = var.subnet_ids
-  tags = merge(var.common_tags, {
+  tags = [{
     key = "Name"
     value = var.name
     propagate_at_launch = true
-  })
+  }]
 }
