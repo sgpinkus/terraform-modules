@@ -94,7 +94,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
   ebs_optimized = false
   associate_public_ip_address = false
   iam_instance_profile = aws_iam_instance_profile.main.arn
-  image_id = var.image_id == "" ? local.general_purpose_ami_map[var.region] : var.image_id
+  image_id = var.image_id # == "" ? local.general_purpose_ami_map[var.region] : var.image_id
   instance_type = "t3a.medium"
   key_name = var.key_name
   metadata_options {
@@ -102,8 +102,9 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
     http_endpoint = "enabled"
   }
   root_block_device {
-    volume_type = "gp3"
-    encrypted = "true"
+    volume_type = var.root_block_device.volume_type
+    volume_size = var.root_block_device.volume_size
+    encrypted = var.root_block_device.encrypted
   }
   security_groups = [aws_security_group.this.id]
   lifecycle {

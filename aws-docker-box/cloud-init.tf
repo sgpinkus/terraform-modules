@@ -31,6 +31,8 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     content = <<-EOF
     TOKEN=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
     INSTANCEID=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+    PRIVATE_IP=$(curl --max-time 60 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+    echo $INSTANCEID $PRIVATE_IP
     EOF
   }
   part {
@@ -41,7 +43,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
       chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
       amazon-linux-extras install epel -y
       yum update -y
-      yum install yum-cron audit awslogs docker docker-compose -y
+      yum install yum-cron audit awslogs docker -y
       systemctl enable yum-cron awslogsd docker
       systemctl restart awslogsd
     EOF
@@ -68,6 +70,15 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     content = <<-EOF
       sed -i -r "s/ec2-user ALL=\(ALL\) NOPASSWD:ALL/ec2-user ALL=(ALL) ALL/"  /etc/sudoers.d/90-cloud-init-users
       echo "${var.ec2user_password}" | passwd ec2-user -f --stdin
+    EOF
+  }
+  part {
+    # More reliabe than cloud-init packages and yum_repos etc modules ...
+    filename = "5-docker-compose.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
+      sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      sudo chmod +x /usr/local/bin/docker-compose
     EOF
   }
   part {

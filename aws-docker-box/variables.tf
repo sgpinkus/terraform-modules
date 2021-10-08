@@ -13,8 +13,6 @@ variable "common_tags" {
 
 variable "image_id" {
   type = string
-  default = ""
-  description = "If not set an Amazon Linux 2 image will be used. Module assumes image is Amazon Linux derived."
 }
 
 variable "subnet_ids" {
@@ -61,8 +59,21 @@ variable "egress_rules" {
       description = ""
       protocol = "-1"
       from_port = 0
-      to_port = 65535
+      to_port = 0
       cidr_blocks = ["0.0.0.0/0"]
     }
   ]
+}
+
+variable root_block_device {
+  type = object({
+    volume_size = optional(number)
+    volume_type = optional(string)
+    encrypted = optional(bool)
+  })
+  default = {
+    volume_size = 30
+    volume_type = "gp3"
+    encrypted = "true"
+  }
 }
