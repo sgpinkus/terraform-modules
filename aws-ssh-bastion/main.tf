@@ -104,7 +104,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
     volume_type = "gp3"
     encrypted = "true"
   }
-  security_groups = concat([aws_security_group.main.id], var.security_group_ids])
+  security_groups = concat([aws_security_group.main.id], var.security_group_ids)
   lifecycle {
     create_before_destroy = true
   }
