@@ -13,6 +13,10 @@ variable "common_tags" {
   default = {}
 }
 
+variable "enabled_metrics" { # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/autoscaling_group#enabled_metrics
+  default = ["GroupInServiceInstances", "GroupPendingInstances", "GroupTerminatingInstances", "GroupTotalInstances"]
+}
+
 variable "image_id" {
   type = string
   default = ""
