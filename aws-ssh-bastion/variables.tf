@@ -4,6 +4,11 @@ variable "region" {
   description = "The AWS Region to provision resources in"
 }
 
+variable "name" {
+  default = "bastion"
+  description = "Used to name resources that take a name or name prefix"
+}
+
 variable "common_tags" {
   default = {}
 }

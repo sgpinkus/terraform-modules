@@ -1,5 +1,5 @@
 resource "aws_security_group" "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${local.name_prefix}-"
   ingress {
     description = ""
     protocol = "tcp"
@@ -26,19 +26,19 @@ resource "aws_security_group" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "main" {
-  name = "bastion"
+  name = "${var.name}"
   retention_in_days = 7
   tags = var.common_tags
 }
 
 resource "aws_cloudwatch_log_group" "security" {
-  name = "bastion-security"
+  name = "${local.name_prefix}bastion-security"
   retention_in_days = 30
   tags = var.common_tags
 }
 
 resource aws_iam_role "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${local.name_prefix}-"
   force_detach_policies = true
   assume_role_policy = jsonencode({
     "Version" = "2012-10-17"
@@ -84,12 +84,12 @@ resource aws_iam_role "main" {
 }
 
 resource "aws_iam_instance_profile" "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${local.name_prefix}-"
   role = aws_iam_role.main.name
 }
 
 resource "aws_launch_configuration" "main" { # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/launch_configuration
-  name_prefix = "bastion-" # Don't specify name.
+  name_prefix = "${local.name_prefix}-" # Don't specify name.
   ebs_optimized = false
   associate_public_ip_address = false
   iam_instance_profile = aws_iam_instance_profile.main.arn
@@ -112,7 +112,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
 }
 
 resource "aws_autoscaling_group" "main" {
-  name_prefix = "bastion-"
+  name_prefix = "${local.name_prefix}-"
   min_size = 1
   max_size = 1
   instance_refresh {
@@ -122,7 +122,7 @@ resource "aws_autoscaling_group" "main" {
   vpc_zone_identifier = var.subnet_ids
   tag {
     key = "Name"
-    value = "bastion"
+    value = "${var.name}"
     propagate_at_launch = true
   }
 }
