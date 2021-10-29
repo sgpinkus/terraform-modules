@@ -119,3 +119,12 @@ variable "ebs_volume_snapshot_id" {
 variable "ebs_volume_mount_point" {
   default = "/data"
 }
+
+variable "additional_cloudinit_config_parts" {
+  type = list(object({
+    filename = string
+    content_type = string
+    content = string
+  }))
+  default = []
+}

@@ -36,15 +36,21 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
+    filename = "0-chattr.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
+      chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
+    EOF
+  }
+  part {
     # More reliabe than cloud-init packages and yum_repos etc modules ...
     filename = "1-packages.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
-      chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
       amazon-linux-extras install epel -y
       yum update -y
-      yum install yum-cron audit awslogs docker -y
-      systemctl enable yum-cron awslogsd docker
+      yum install yum-cron audit awslogs -y
+      systemctl enable yum-cron awslogsd
       systemctl restart awslogsd
     EOF
   }
@@ -73,19 +79,30 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
+    filename = "7-base-final.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
+      systemctl status yum-cron auditd awslogsd || true
+    EOF
+  }
+  part {
     # More reliabe than cloud-init packages and yum_repos etc modules ...
-    filename = "5-docker-compose.sh"
+    filename = "10-docker-packages.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
+      amazon-linux-extras install epel -y
+      yum install docker -y
+      systemctl enable docker
+      systemctl restart awslogsd
+    EOF
+  }
+  part {
+    # More reliabe than cloud-init packages and yum_repos etc modules ...
+    filename = "11-docker-compose.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       sudo chmod +x /usr/local/bin/docker-compose
-    EOF
-  }
-  part {
-    filename = "7-final.sh"
-    content_type = "text/x-shellscript"
-    content = <<-EOF
-      systemctl status yum-cron auditd awslogsd docker || true
     EOF
   }
 }

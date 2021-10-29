@@ -41,11 +41,16 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    # More reliabe than cloud-init packages and yum_repos etc modules ...
-    filename = "1-packages.sh"
+    filename = "0-chattr.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
+    EOF
+  part {
+    # More reliabe than cloud-init packages and yum_repos etc modules ...
+    filename = "1-base-packages.sh"
+    content_type = "text/x-shellscript"
+    content = <<-EOF
       amazon-linux-extras install epel -y
       yum update -y
       yum install yum-cron audit awslogs fail2ban firewalld -y
@@ -116,10 +121,19 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "8-final.sh"
+    filename = "8-base-final.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       systemctl status yum-cron auditd awslogsd fail2ban firewalld || true
     EOF
+  }
+  # Custom parts. These are run in lexographical order of filename. It's upto user to set filename properly.
+  dynamic "part" {
+    for_each = var.additional_cloudinit_config_parts
+    content {
+      filename = part.value.filename
+      content_type = part.value.content_type
+      content = part.value.content
+    }
   }
 }
