@@ -1,7 +1,7 @@
 Creates a by default Amazon Linux 2 instance configured with a EBS volume attached and basic health check plus reboot action.
 
     module "pi" {
-      source = "./my-terraform-modules/aws-persistence-instance/"
+      source = "./my-terraform-modules/aws-simple-instance-ebs/"
       name = "pi"
       common_tags = var.common_tags
       ec2user_password = var.ec2user_password

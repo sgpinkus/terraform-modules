@@ -51,6 +51,48 @@ variable "ssh_port" {
   default = 22
 }
 
+variable "ingress_rules" {
+  type = list(object({
+    protocol = string
+    from_port = number
+    to_port = number
+    description = optional(string)
+    cidr_blocks = optional(list(string))
+    ipv6_cidr_blocks = optional(list(string))
+    security_groups = optional(list(string))
+  }))
+  default = [
+    {
+      description = ""
+      protocol = "tcp"
+      from_port = 22
+      to_port = 22
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+}
+
+variable "egress_rules" {
+  type = list(object({
+    protocol = string
+    from_port = number
+    to_port = number
+    description = optional(string)
+    cidr_blocks = optional(list(string))
+    ipv6_cidr_blocks = optional(list(string))
+    security_groups = optional(list(string))
+  }))
+  default = [
+    {
+      description = ""
+      protocol = "-1"
+      from_port = 0
+      to_port = 0
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+}
+
 variable "security_group_ids" {
   default = []
   description = "Additional security groups."

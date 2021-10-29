@@ -1,23 +1,38 @@
+terraform {
+  required_version = ">= 0.15"
+  experiments = [module_variable_optional_attrs]
+}
+
 data "aws_subnet" "this" {
   id = var.subnet_id
 }
 
 resource "aws_security_group" "this" {
   name_prefix = "${var.name}-"
-  ingress {
-    description = ""
-    protocol = "tcp"
-    from_port = var.ssh_port
-    to_port = var.ssh_port
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      protocol = ingress.value.protocol
+      from_port = ingress.value.from_port
+      to_port = ingress.value.to_port
+      description = ingress.value.description
+      cidr_blocks = ingress.value.cidr_blocks
+      ipv6_cidr_blocks = ingress.value.ipv6_cidr_blocks
+      security_groups = ingress.value.security_groups
+    }
   }
-  egress {
-    description = ""
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  # Need to explicitly define egress - different to CF which has default open egress.
+  dynamic "egress" {
+    for_each = var.egress_rules
+    content {
+      protocol = egress.value.protocol
+      from_port = egress.value.from_port
+      to_port = egress.value.to_port
+      description = egress.value.description
+      cidr_blocks = egress.value.cidr_blocks
+      ipv6_cidr_blocks = egress.value.ipv6_cidr_blocks
+      security_groups = egress.value.security_groups
+    }
   }
   vpc_id = var.vpc_id
 }

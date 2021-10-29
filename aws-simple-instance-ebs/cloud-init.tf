@@ -103,13 +103,13 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     filename = "7-data-volume.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
-    # blockdev --setra 32 "${local.ebs_volume_device_name}"
+    # blockdev --setra 32 "${var.ebs_volume_device_name}"
     # echo 'ACTION=="add", KERNEL=="'$1'", ATTR{bdi/read_ahead_kb}="16"' | tee /etc/udev/rules.d/85-ebs.rules
     if [[ -z "${var.ebs_volume_snapshot_id}" ]]; then
-      mkfs.xfs -f "${local.ebs_volume_device_name}"
+      mkfs.xfs -f "${var.ebs_volume_device_name}"
     fi
-    if ! egrep "^${local.ebs_volume_device_name}" /etc/fstab -q; then
-      echo "${local.ebs_volume_device_name} ${var.ebs_volume_mount_point} xfs defaults,auto,noatime,noexec 0 0" | tee -a /etc/fstab
+    if ! egrep "^${var.ebs_volume_device_name}" /etc/fstab -q; then
+      echo "${var.ebs_volume_device_name} ${var.ebs_volume_mount_point} xfs defaults,auto,noatime,noexec 0 0" | tee -a /etc/fstab
     fi
     mkdir -p ${var.ebs_volume_mount_point}
     mount ${var.ebs_volume_mount_point}
