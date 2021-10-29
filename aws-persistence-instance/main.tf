@@ -136,7 +136,7 @@ resource "aws_instance" "this" {
 }
 
 resource "aws_volume_attachment" "this" {
-  device_name = local.ebs_volume_device_name
+  device_name = var.ebs_volume_device_name
   volume_id   = aws_ebs_volume.this.id
   instance_id = aws_instance.this.id
 }
@@ -178,6 +178,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_instance" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "ec2_instance_cpu" {
+  # If CPU is super high for super long something is probably wrong so restart.
   alarm_name = "${var.name}-instance-cpu-check-failed-alarm-${aws_instance.this.id}"
   comparison_operator       = "GreaterThanOrEqualToThreshold"
   evaluation_periods        = "5"

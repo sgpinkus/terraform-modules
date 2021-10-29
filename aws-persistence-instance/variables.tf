@@ -65,6 +65,10 @@ variable "ebs_volume_size" {
   default = 10
 }
 
+variable "ebs_volume_device_name" {
+  default = "/dev/xvdf"
+}
+
 variable "ebs_volume_snapshot_id" {
   type = string
   default = ""
