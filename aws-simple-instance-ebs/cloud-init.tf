@@ -41,14 +41,15 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "0-chattr.sh"
+    filename = "100-chattr.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
     EOF
+  }
   part {
     # More reliabe than cloud-init packages and yum_repos etc modules ...
-    filename = "1-base-packages.sh"
+    filename = "101-base-packages.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       amazon-linux-extras install epel -y
@@ -59,14 +60,14 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "2-yum.sh"
+    filename = "102-yum.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -r 's/update_cmd = .*/update_cmd = minimal-security-severity:Important/' /etc/yum/yum-cron.conf -i
     EOF
   }
   part {
-    filename = "3-auditd.sh"
+    filename = "103-auditd.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -i -r 's/log_format\\s*=.*/log_format = ENRICHED/;s/name_format\\s*=.*/name_format = hostname/' /etc/audit/auditd.conf
@@ -75,7 +76,7 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "4-users.sh"
+    filename = "104-users.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -i -r "s/ec2-user ALL=\(ALL\) NOPASSWD:ALL/ec2-user ALL=(ALL) ALL/"  /etc/sudoers.d/90-cloud-init-users
@@ -84,7 +85,7 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "5-firewall.sh"
+    filename = "105-firewall.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       systemctl enable firewalld fail2ban
@@ -93,7 +94,7 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "6-system.sh"
+    filename = "106-system.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
     echo "* soft nofile 64000
@@ -105,7 +106,7 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "7-data-volume.sh"
+    filename = "107-data-volume.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
     # blockdev --setra 32 "${var.ebs_volume_device_name}"
@@ -121,7 +122,7 @@ data "template_cloudinit_config" "this" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "8-base-final.sh"
+    filename = "108-base-final.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       systemctl status yum-cron auditd awslogsd fail2ban firewalld || true

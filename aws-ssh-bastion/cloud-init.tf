@@ -42,7 +42,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
   }
   part {
     # More reliabe than cloud-init packages and yum_repos etc modules ...
-    filename = "0-eip.sh"
+    filename = "100-eip.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
     TOKEN=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
@@ -52,7 +52,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
   }
   part {
     # More reliabe than cloud-init packages and yum_repos etc modules ...
-    filename = "1-packages.sh"
+    filename = "101-packages.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       chattr +i /etc/awslogs/awscli.conf # Something is changing this file with broken config.
@@ -64,14 +64,14 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "2-yum.sh"
+    filename = "102-yum.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -r 's/update_cmd = .*/update_cmd = minimal-security-severity:Important/' /etc/yum/yum-cron.conf -i
     EOF
   }
   part {
-    filename = "3-auditd.sh"
+    filename = "103-auditd.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -i -r 's/log_format\\s*=.*/log_format = ENRICHED/;s/name_format\\s*=.*/name_format = hostname/' /etc/audit/auditd.conf
@@ -80,7 +80,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "4-users.sh"
+    filename = "104-users.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       sed -i -r "s/ec2-user ALL=\(ALL\) NOPASSWD:ALL/ec2-user ALL=(ALL) ALL/"  /etc/sudoers.d/90-cloud-init-users
@@ -89,7 +89,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "5-firewall.sh"
+    filename = "105-firewall.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       systemctl enable firewalld fail2ban
@@ -98,7 +98,7 @@ data "template_cloudinit_config" "main" { // https://registry.terraform.io/provi
     EOF
   }
   part {
-    filename = "7-final.sh"
+    filename = "107-final.sh"
     content_type = "text/x-shellscript"
     content = <<-EOF
       systemctl status yum-cron auditd awslogsd fail2ban firewalld || true
