@@ -147,7 +147,7 @@ resource "aws_launch_configuration" "main" { # https://registry.terraform.io/pro
   image_id = var.image_id != "" ? var.image_id : data.aws_ami.main.id
   instance_type = "t2.nano"
   key_name = var.key_name
-  vpc_security_group_ids = [aws_security_group.main.id]
+  security_groups = [aws_security_group.main.id]
   user_data_base64 = "${data.template_cloudinit_config.main.rendered}"
   metadata_options {
     http_tokens = "required"
